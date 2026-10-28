@@ -1,64 +1,31 @@
-import type { FC, MouseEventHandler, PropsWithChildren } from "react";
+// Tofu: the Google and GitHub buttons are replaced by the owner's password, the one way in to a copy, and the sign-in
+// buttons elsewhere open the sign-in page (see TOFU.md).
+import type { FC, PropsWithChildren } from "react";
 import { useMemo, useState } from "react";
 
-import { Button, LoadingOverlay, Popover, Stack, useMantineTheme } from "@mantine/core";
-import { IconBrandGithub } from "@tabler/icons";
+import { Alert, Button, Code, PasswordInput, Stack, Text } from "@mantine/core";
+import { IconAlertCircle, IconLock } from "@tabler/icons";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { signIn } from "next-auth/react";
 import { useTranslations } from "next-intl";
 
-import type { ButtonProps as MantineButtonProps, PopoverBaseProps } from "@mantine/core";
-import type { BuiltInProviderType } from "next-auth/providers";
-import type { LiteralUnion } from "next-auth/react";
+import type { PopoverBaseProps } from "@mantine/core";
 
-import { White } from "src/styles/theme";
-
-import { GoogleIcon } from "./GoogleIcon";
-
-interface ButtonProps extends MantineButtonProps {
-    onClick?: MouseEventHandler<HTMLButtonElement>;
-}
+/** What the server knows of the owner's password (src/server/tofu-owner.ts). */
+export type OwnerPasswordState = "missing" | "set" | "too_short";
 
 interface LoginOptionsProps {
-    loading?: boolean;
-    setLoading?: (loading: boolean) => void;
+    /** Whether the owner's password is saved; nobody can sign in until it is */
+    passwordState: OwnerPasswordState;
 }
 
-const GoogleButton = (props: ButtonProps) => {
-    return (
-        <Button
-            {...props}
-            bg={White}
-            data-testid="google-login-button"
-            leftIcon={<GoogleIcon />}
-            radius="sm"
-            size="lg"
-            sx={(theme) => ({ "&:hover": { backgroundColor: theme.colors.gray[2], boxShadow: theme.shadows.md } })}
-            variant="default"
-        />
-    );
-};
-
-const GithubButton = (props: ButtonProps) => {
-    return (
-        <Button
-            {...props}
-            data-testid="github-login-button"
-            leftIcon={<IconBrandGithub size={16} />}
-            size="lg"
-            sx={(theme) => ({
-                "&:hover": { backgroundColor: theme.colors.gray[7], boxShadow: theme.shadows.md },
-                backgroundColor: theme.colors.gray[8],
-                borderRadius: theme.radius.sm,
-                color: White,
-            })}
-        />
-    );
-};
-
-export const LoginOptionsContent: FC<LoginOptionsProps> = ({ loading = false, setLoading }) => {
+export const LoginOptionsContent: FC<LoginOptionsProps> = ({ passwordState }) => {
     const router = useRouter();
     const t = useTranslations("auth");
+    const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [failed, setFailed] = useState(false);
     const callbackUrl = useMemo(() => {
         if (typeof router.query?.callbackUrl === "string" && !router.query?.callbackUrl?.includes("auth/signin")) {
             // if callbackUrl exists and its not the signin url, use it
@@ -67,38 +34,80 @@ export const LoginOptionsContent: FC<LoginOptionsProps> = ({ loading = false, se
         return "/restaurant";
     }, [router.query]);
 
-    const clickLoginOption = (provider: LiteralUnion<BuiltInProviderType, string>) => {
-        signIn(provider, { callbackUrl });
-        if (setLoading) {
-            setLoading(true);
+    if (passwordState !== "set") {
+        return (
+            <Stack maw={420} px="xl" py="md" spacing="sm">
+                <Alert
+                    color="orange"
+                    data-testid="owner-password-missing"
+                    icon={<IconAlertCircle />}
+                    radius="lg"
+                    title={t(passwordState === "missing" ? "ownerPasswordMissingTitle" : "ownerPasswordShortTitle")}
+                >
+                    <Text>
+                        {t(passwordState === "missing" ? "ownerPasswordMissing" : "ownerPasswordShort", {
+                            minLength: 12,
+                        })}{" "}
+                        <Code>MENUFIC_ADMIN_PASSWORD</Code>
+                    </Text>
+                    <Text mt="xs">{t("ownerPasswordHowTo")}</Text>
+                </Alert>
+            </Stack>
+        );
+    }
+
+    const submit = async () => {
+        setLoading(true);
+        setFailed(false);
+        const answer = await signIn("owner-password", { callbackUrl, password, redirect: false });
+        if (answer?.ok && answer.url) {
+            router.push(answer.url);
+            return;
         }
+        setLoading(false);
+        setFailed(true);
     };
 
     return (
-        <Stack px="xl" py="md" sx={{ gap: 20 }}>
-            <LoadingOverlay overlayBlur={2} visible={loading} />
-            <GoogleButton onClick={() => clickLoginOption("google")}>{t("googleSignIn")}</GoogleButton>
-            <GithubButton onClick={() => clickLoginOption("github")}>{t("githubSignIn")}</GithubButton>
-        </Stack>
+        <form
+            onSubmit={(event) => {
+                event.preventDefault();
+                if (password) {
+                    submit();
+                }
+            }}
+        >
+            <Stack px="xl" py="md" spacing="sm" w={300}>
+                {failed && (
+                    <Alert color="red" data-testid="owner-password-wrong" icon={<IconAlertCircle />} radius="lg">
+                        {t("wrongPassword")}
+                    </Alert>
+                )}
+                <PasswordInput
+                    autoComplete="current-password"
+                    autoFocus
+                    data-testid="owner-password-input"
+                    description={t("ownerPasswordDescription")}
+                    label={t("ownerPasswordLabel")}
+                    onChange={(event) => setPassword(event.currentTarget.value)}
+                    value={password}
+                />
+                <Button
+                    data-testid="owner-password-submit"
+                    leftIcon={<IconLock size={16} />}
+                    loading={loading}
+                    type="submit"
+                >
+                    {t("loginButtonLabel")}
+                </Button>
+            </Stack>
+        </form>
     );
 };
 
-/** Popover component to allow users to login using multiple providers */
-export const LoginOptions: FC<PopoverBaseProps & PropsWithChildren> = ({ children, ...rest }) => {
-    const [loading, setLoading] = useState(false);
-    const theme = useMantineTheme();
-    return (
-        <Popover
-            onOpen={() => setLoading(false)}
-            shadow="xl"
-            styles={{ dropdown: { background: theme.white, overflow: "hidden" } }}
-            withArrow
-            {...rest}
-        >
-            <Popover.Target>{children}</Popover.Target>
-            <Popover.Dropdown>
-                <LoginOptionsContent loading={loading} setLoading={setLoading} />
-            </Popover.Dropdown>
-        </Popover>
-    );
-};
+/** Wraps a sign-in button: it opens the sign-in page, where the owner types their password */
+export const LoginOptions: FC<Partial<PopoverBaseProps> & PropsWithChildren> = ({ children }) => (
+    <Link data-testid="login-link" href="/auth/signin">
+        {children}
+    </Link>
+);

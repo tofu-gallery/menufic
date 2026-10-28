@@ -2,7 +2,6 @@ import { Alert, Container, Text, useMantineTheme } from "@mantine/core";
 import { IconAlertCircle } from "@tabler/icons";
 import { createProxySSGHelpers } from "@trpc/react-query/ssg";
 import { useRouter } from "next/router";
-import { getSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { NextSeo } from "next-seo";
 import superjson from "superjson";
@@ -13,7 +12,11 @@ import { Footer } from "src/components/Footer";
 import { RestaurantMenu } from "src/components/RestaurantMenu";
 import { appRouter } from "src/server/api/root";
 import { createInnerTRPCContext } from "src/server/api/trpc";
+import { getServerAuthSession } from "src/server/auth";
 import { api } from "src/utils/api";
+
+// Tofu: the session is read from the request itself (getServerAuthSession), not by a request this server sends to its
+// own address, which a private copy's sign-in gate or a missing NEXTAUTH_URL would stop (see TOFU.md).
 
 /** Page that can be used to preview how the published menu would look like */
 const RestaurantMenuPreviewPage: NextPage = () => {
@@ -53,7 +56,7 @@ const RestaurantMenuPreviewPage: NextPage = () => {
 };
 
 export const getServerSideProps = async (context: GetServerSidePropsContext<{ restaurantId: string }>) => {
-    const session = await getSession(context);
+    const session = await getServerAuthSession({ req: context.req, res: context.res });
     if (!session) {
         // This page should be only accessible once you are logged in
         return { redirect: { destination: "/" } };

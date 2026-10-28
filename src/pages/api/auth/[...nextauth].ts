@@ -1,9 +1,13 @@
+// Tofu: the owner signs in with their password (MENUFIC_ADMIN_PASSWORD), the one way in to a copy. Google, GitHub and
+// the test login key are removed: with them, anyone with a Google or GitHub account could sign in to a copy at its
+// public address and make restaurants there (see TOFU.md and src/server/tofu-owner.ts).
 import NextAuth, { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import GitHubProvider from "next-auth/providers/github";
-import GoogleProvider from "next-auth/providers/google";
 
-import { env } from "src/env/server.mjs";
+import { isOwnerPassword, OWNER_USER_ID, sessionSecret } from "src/server/tofu-owner";
+
+/** How long a wrong password waits before it is answered, which slows down guessing. */
+const WRONG_PASSWORD_DELAY_MS = 1000;
 
 export const authOptions: NextAuthOptions = {
     // Include user.id on session
@@ -18,27 +22,22 @@ export const authOptions: NextAuthOptions = {
     },
     pages: { signIn: "/auth/signin" },
     providers: [
-        GoogleProvider({
-            clientId: env.GOOGLE_CLIENT_ID,
-            clientSecret: env.GOOGLE_CLIENT_SECRET,
-        }),
-        GitHubProvider({
-            clientId: env.GITHUB_CLIENT_ID,
-            clientSecret: env.GITHUB_CLIENT_SECRET,
-        }),
         CredentialsProvider({
-            authorize(credentials) {
-                if (env.TEST_MENUFIC_USER_LOGIN_KEY && credentials?.loginKey === env.TEST_MENUFIC_USER_LOGIN_KEY) {
-                    return { email: "testUser@gmail.com", id: "testUser", image: "", name: "Test User" };
+            async authorize(credentials) {
+                if (isOwnerPassword(credentials?.password)) {
+                    return { email: null, id: OWNER_USER_ID, image: null, name: "Owner" };
                 }
-                // If you return null then an error will be displayed advising the user to check their details.
+                await new Promise((resolve) => setTimeout(resolve, WRONG_PASSWORD_DELAY_MS));
+                // A null answer shows the sign-in page's error.
                 return null;
-                // You can also Reject this callback with an Error thus the user will be sent to the error page with the error message as a query parameter
             },
-            credentials: { loginKey: { label: "Login Key", type: "password" } },
+            credentials: { password: { label: "Password", type: "password" } },
+            id: "owner-password",
+            name: "Owner password",
             type: "credentials",
         }),
     ],
+    secret: sessionSecret(),
     session: {
         // Seconds - How long until an idle session expires and is no longer valid.
         maxAge: 30 * 24 * 60 * 60, // 30 days

@@ -24,7 +24,15 @@
         "testLoginDesc": "Login key is only used for testing purposes",
         "loginKeyInputLabel": "Login Key",
         "loginKeyInputPlaceholder": "Paste login key here",
-        "loginButtonLabel": "Login"
+        "loginButtonLabel": "Login",
+        "ownerPasswordLabel": "Owner password",
+        "ownerPasswordDescription": "The password the owner of this menu app saved for it",
+        "wrongPassword": "That is not the owner's password.",
+        "ownerPasswordMissingTitle": "Nobody can sign in yet",
+        "ownerPasswordMissing": "This menu app has no owner password yet. Its owner saves one as a hidden value named",
+        "ownerPasswordShortTitle": "The owner's password is too short",
+        "ownerPasswordShort": "The owner's password must be at least {minLength} characters long, so nobody can sign in yet. Its owner saves a longer one as the hidden value",
+        "ownerPasswordHowTo": "On Tofu, that is in the app's Keys & settings, with Hide this value after saving on. Deploy the app again afterwards, then sign in here with that password."
     },
     "errorPage": {
         "defaultMessage": "Aaaah! Something went wrong",
