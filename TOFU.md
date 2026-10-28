@@ -167,6 +167,29 @@ database owned by a role that is not a superuser (`menufic_app`), as the app's o
 - Tofu's own check (its GitHub import, the static lane's predicates and the safety check): 0 safety findings; 137 of
   the 500 files the Free static lane publishes; not on the static lane, as a Next.js server app.
 
+Again on 2026-10-28, after a review's three fixes (the menu's link preview, the home page's button, a refused refresh
+of the menu page), on the same machine, Node and PostgreSQL:
+
+- The tree of `d0efa3e` (the same code as the commit that adds this paragraph) was exported with `git archive` and every
+  executable bit removed; `npm install` left `package-lock.json` as it was, and `npm run build` compiled, linted with
+  no warning, type-checked and listed 15 routes. Both files in `supabase/migrations/` were applied with
+  `psql -1 -v ON_ERROR_STOP=1 -f` as a role that is not a superuser: six tables, owned by it, row-level security on.
+- `next start` with a random 24-character password, `HOME` a folder nobody can read: the live check answered
+  `RESULT PASS`. The home page's button reads "Owner sign-in", and "Get started for free" is nowhere on the page. The
+  published menu page's `description` and `og:description` read "Menu of restaurant ... Corner bakery. Location: 12
+  Market Street.", and the page names no menufic.com. Unpublishing took the dish off the guest page at once. With no
+  password the live check also answered `RESULT PASS`: nobody got in.
+- A refused refresh, the way Vercel refreshes a page: the exported tree's `next.config.mjs` was given Next.js's
+  `experimental.trustHostHeader` for this run only, so the refresh became a request to `https://<host>`, which fails
+  against the local server's plain HTTP. Publish and Unpublish answered 200, the log said
+  `[menufic] /restaurant/<id>/menu was not refreshed at once, it will be within 60 s: Failed to revalidate ...: fetch
+  failed` each time, and the guest page dropped the dish 65 seconds after unpublishing; the live check, which waits up
+  to 80 seconds for that, answered `RESULT PASS`. The previous pin's code under the same run answered both with a server
+  error (500) while saving the change, and logged nothing.
+- Headless Chromium at 390x844 (a phone, with touch) and 1200x750: the home page's "Owner sign-in" button is on the
+  screen, nothing is wider than the screen, there are no page or console errors, and the button opens `/auth/signin`.
+- Tofu's own check on `d0efa3e`: 0 safety findings; 137 of the 500 files the Free static lane publishes.
+
 ## Needs a real deploy to verify
 
 - The first deploy applies both files in `supabase/migrations/` before the build (the deploy's database note says what
