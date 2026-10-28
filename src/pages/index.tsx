@@ -1,15 +1,15 @@
-import { useScrollIntoView } from "@mantine/hooks";
+// Tofu: a copy's home page leaves out menufic.com's pricing and its contact form (which posted to menufic.com's own
+// form service), and shows the sample menu only when NEXT_PUBLIC_SAMPLE_MENU_ID names one (see TOFU.md).
 import { type NextPage } from "next";
 import { NextSeo } from "next-seo";
 
 import { Footer } from "src/components/Footer";
 import { NavHeader } from "src/components/Header";
-import { AboutUs, ContactUs, Features, Hero, Pricing, SampleMenu, Steps } from "src/components/LandingSections";
+import { AboutUs, Features, Hero, SampleMenu, Steps } from "src/components/LandingSections";
+import { env } from "src/env/client.mjs";
 
 /** Landing page to showcase what menufic is and what are the features that menufic provides */
 const LandingPage: NextPage = () => {
-    const { scrollIntoView, targetRef } = useScrollIntoView<HTMLDivElement>({ offset: 60 });
-
     return (
         <>
             <NextSeo
@@ -20,9 +20,7 @@ const LandingPage: NextPage = () => {
             <Hero />
             <Steps />
             <Features />
-            <SampleMenu />
-            <Pricing scrollToContactUs={scrollIntoView} />
-            <ContactUs contactUsRef={targetRef} />
+            {env.NEXT_PUBLIC_SAMPLE_MENU_ID && <SampleMenu />}
             <AboutUs />
             <Footer />
         </>

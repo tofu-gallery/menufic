@@ -28,10 +28,10 @@ export const CustomFooter: FC = () => {
     const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm}px)`);
     const t = useTranslations("common");
 
-    const footerLinks = [
-        { label: t("privacyPolicy"), link: "/privacy-policy" },
-        { label: t("terms&Conditions"), link: "/terms-and-conditions" },
-    ];
+    // Tofu: the links to menufic.com's privacy policy and terms are removed with those pages: they describe
+    // menufic.com's own service (its sign-in providers, image host and contact address), not the owner's copy
+    // (see TOFU.md).
+    const footerLinks: { label: string; link: string }[] = [];
 
     const items = footerLinks.map((link) => (
         <Link key={link.label} className={classes.linkItem} href={link.link}>
