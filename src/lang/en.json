@@ -203,7 +203,7 @@
             "modalTitle": "Publish and share your menu",
             "modalAlertPublishedTitle": "Menu is published",
             "modalAlertNotPublishedTitle": "Menu is not published",
-            "publishedMenuDesc": "Changes to the menu could take around 30 minutes to be reflected in the published menu page",
+            "publishedMenuDesc": "Changes to the menu could take around a minute to be reflected in the published menu page",
             "publishedMenuUrlLabel": "Published menu URL",
             "copyUrlTooltip": "Copy URL",
             "copiedUrlTooltip": "URL copied",
