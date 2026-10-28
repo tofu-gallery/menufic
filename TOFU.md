@@ -165,7 +165,8 @@ database owned by a role that is not a superuser (`menufic_app`), as the app's o
   answered 200 on `/` and `/api/health`; nothing at start touches the schema.
 - In headless Chromium at 390x844 (a phone, with touch) and 1200x750: the guest menu, a dish opened, the sign-in page,
   the owner's restaurants, the menu editor and the publish dialog with its QR code had nothing wider than the screen and
-  no page or console errors.
+  no page or console errors, with the 13-character restaurant name "Corner bistro" (a longer name made the owner's pages
+  wider than a phone until the breadcrumb fix checked below).
 - The tree of the pin was exported with `git archive`, every file's executable bit removed, and installed, built and
   started from there as above: it passed the same way, since nothing runs a repository file directly.
 - Tofu's own check (its GitHub import, the static lane's predicates and the safety check): 0 safety findings; 137 of
@@ -193,6 +194,26 @@ of the menu page), on the same machine, Node and PostgreSQL:
 - Headless Chromium at 390x844 (a phone, with touch) and 1200x750: the home page's "Owner sign-in" button is on the
   screen, nothing is wider than the screen, there are no page or console errors, and the button opens `/auth/signin`.
 - Tofu's own check on `d0efa3e`: 0 safety findings; 137 of the 500 files the Free static lane publishes.
+
+Again on 2026-10-28, after a second review's fix (the breadcrumbs on a phone), on the same machine, Node and PostgreSQL:
+
+- The tree of `4ef7944` (the same code as the commit that adds this paragraph) was exported with `git archive` and every
+  executable bit removed; `npm install` left `package-lock.json` as it was, and `npm run build` compiled, linted with
+  no warning, type-checked and listed 15 routes. Both files in `supabase/migrations/` were applied with
+  `psql -1 -v ON_ERROR_STOP=1 -f` as a role that is not a superuser: six tables, owned by it, row-level security on.
+- `next start` with a random 24-character password, `HOME` a folder nobody can read, and five published restaurants
+  named "Corner bistro" (13 characters), "Golden Dragon Noodle House" (26), "Corner bistro by the old harbour" (32),
+  "Corner bistro and noodle bar by the pier" (40, the longest the app allows; its menu, category, dish and price names
+  at their longest too) and one 40-letter word with no space. In headless Chromium at 390x844 (a phone, with touch),
+  the restaurant, menu editor and banners pages were 390 pixels wide for every name (the review had measured the menu
+  editor and banners pages before this fix at 421 and 437 for the 26-character name, 442 and 458 for the 32-character
+  one): the breadcrumbs take one line for "Corner bistro" and up to three for the 40-character name, which wraps inside
+  its crumb, and nothing is cut off. At 1200x750 they stay on one line as before. The restaurant list, Explore, the
+  preview page, the publish dialog with its QR code and the guest menu were 390 pixels wide too for every name with
+  spaces, with no page or console errors. Only the 40-letter word with no space is still wider than a phone in the
+  guest menu's and the preview page's title (663 pixels), as upstream.
+- The live check answered `RESULT PASS` with the password, and `RESULT PASS` without one: nobody got in.
+- Tofu's own check on `4ef7944`: 0 safety findings; 137 of the 500 files the Free static lane publishes.
 
 ## Needs a real deploy to verify
 
