@@ -65,6 +65,22 @@ export const getMantineTheme = (colorScheme: ColorScheme): MantineThemeOverride 
     black: colorScheme === "light" ? Black : White,
     colorScheme,
     colors: theme[colorScheme],
+    // Tofu: Mantine keeps breadcrumbs on one line, so on a phone a long restaurant name (up to 40 characters) made the
+    // owner's restaurant, menu editor and banners pages wider than the screen. Let the crumbs wrap, and let a long name
+    // wrap inside its own crumb (see TOFU.md).
+    components: {
+        Breadcrumbs: {
+            styles: {
+                breadcrumb: {
+                    lineHeight: 1.35,
+                    overflowWrap: "anywhere",
+                    whiteSpace: "normal",
+                    wordBreak: "break-word",
+                },
+                root: { flexWrap: "wrap", rowGap: 4 },
+            },
+        },
+    },
     defaultGradient: { deg: 180, from: theme.light.primary[5], to: theme.light.primary[7] },
     defaultRadius: "lg",
     fontFamily: `ExpletusSans, Helvetica, Arial, sans-serif !important`,

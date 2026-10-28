@@ -107,6 +107,10 @@ Each commit on `tofu` says why in its message; in short:
   since it opens the owner's password page and a guest who lands there has nothing to start. The sample menu shows
   only when `NEXT_PUBLIC_SAMPLE_MENU_ID` names one of the copy's own restaurants. The "About" section still credits
   and links upstream.
+- **The owner's pages fit a phone whatever the restaurant's name** (`src/styles/theme.ts`): Mantine keeps breadcrumbs
+  on one line, so on a phone a restaurant name longer than about 21 characters (up to 40 are allowed) made the
+  restaurant, menu editor and banners pages wider than the screen, and cut off their last crumb, as upstream does. The
+  breadcrumbs wrap now, and a long name wraps inside its own crumb. Guests' pages have no breadcrumbs.
 - `.env.example` lists the settings above instead of upstream's.
 
 Every code file Tofu changed carries a comment starting with `Tofu:`; `package.json`, `package-lock.json` and the JSON
