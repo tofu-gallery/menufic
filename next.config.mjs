@@ -1,5 +1,6 @@
 // @ts-check
-import { withSentryConfig } from "@sentry/nextjs";
+// Tofu: Sentry's wrapper and the ImageKit image host are removed (see TOFU.md): a copy reports to no one, and its
+// photos are served by the app itself from its own database.
 /**
  * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation.
  * This is especially useful for Docker builds.
@@ -13,19 +14,10 @@ const config = {
     i18n: { defaultLocale: "en", locales: ["en"] },
     images: {
         formats: ["image/avif", "image/webp"],
-        remotePatterns: [{ hostname: "ik.imagekit.io", pathname: "/**", protocol: "https" }],
         unoptimized: true,
     },
     reactStrictMode: false,
-    sentry: {
-        hideSourceMaps: true,
-    },
     swcMinify: true,
 };
 
-const sentryWebpackPluginOptions = {
-    dryRun: !process.env.VERCEL,
-    silent: true,
-};
-
-export default withSentryConfig(config, sentryWebpackPluginOptions);
+export default config;

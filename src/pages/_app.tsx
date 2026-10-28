@@ -1,7 +1,6 @@
 import { ColorSchemeProvider, MantineProvider } from "@mantine/core";
 import { useColorScheme, useLocalStorage } from "@mantine/hooks";
 import { NotificationsProvider } from "@mantine/notifications";
-import { Analytics } from "@vercel/analytics/react";
 import { type AppType } from "next/app";
 import { type Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
@@ -16,6 +15,8 @@ import { CustomFonts } from "src/styles/CustomFonts";
 import { getMantineTheme, theme } from "src/styles/theme";
 import { api } from "src/utils/api";
 
+// Tofu: no Vercel Analytics, and the pages name this copy's own address (NEXT_PUBLIC_PROD_URL), not menufic.com
+// (see TOFU.md).
 const MyApp: AppType<{ messages?: AbstractIntlMessages; session: Session | null }> = ({
     Component,
     pageProps: { session, ...pageProps },
@@ -38,10 +39,12 @@ const MyApp: AppType<{ messages?: AbstractIntlMessages; session: Session | null 
                     { content: "minimum-scale=1, initial-scale=1, width=device-width", name: "viewport" },
                 ]}
                 openGraph={{
-                    images: [{ url: `${env.NEXT_PUBLIC_PROD_URL}/menufic_banner.jpg` }],
-                    siteName: "menufic.com",
+                    images: env.NEXT_PUBLIC_PROD_URL
+                        ? [{ url: `${env.NEXT_PUBLIC_PROD_URL}/menufic_banner.jpg` }]
+                        : undefined,
+                    siteName: "Menufic",
                     type: "website",
-                    url: env.NEXT_PUBLIC_PROD_URL,
+                    url: env.NEXT_PUBLIC_PROD_URL || undefined,
                 }}
                 themeColor={theme.light.primary[6]}
                 titleTemplate="Menufic - %s"
@@ -55,7 +58,6 @@ const MyApp: AppType<{ messages?: AbstractIntlMessages; session: Session | null 
                             <NextIntlProvider messages={pageProps.messages}>
                                 <Component {...pageProps} />
                             </NextIntlProvider>
-                            <Analytics />
                         </SessionProvider>
                     </NotificationsProvider>
                 </MantineProvider>
