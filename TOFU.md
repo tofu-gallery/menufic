@@ -95,7 +95,10 @@ Each commit on `tofu` says why in its message; in short:
 - **A published menu refreshes within about a minute**: the menu page is drawn again at most 60 seconds after the last
   time (upstream: 30 minutes), so the owner's changes reach guests quickly, and the publish dialog says so
   (`src/pages/restaurant/[restaurantId]/menu.tsx`, `src/lang/en.json`). Publishing or unpublishing refreshes it at once,
-  as upstream did.
+  as upstream did. If the hosting refuses that refresh (on Vercel it is a request the app sends to its own address),
+  the change is still saved and the owner is told it worked: the error is logged as `[menufic] /restaurant/<id>/menu
+  was not refreshed at once`, and the page changes within the minute (`src/server/api/routers/restaurant.router.ts`;
+  upstream answered the owner with a server error, though the change was saved).
 - **The home page is the copy's, not menufic.com's** (`src/pages/index.tsx`, `src/components/Footer/Footer.tsx`;
   `src/pages/privacy-policy.tsx` and `src/pages/terms-and-conditions.tsx` removed): menufic.com's pricing, its contact
   form (which posted to menufic.com's form service, and claimed success without sending anything when its key was
@@ -179,5 +182,6 @@ database owned by a role that is not a superuser (`menufic_app`), as the app's o
 - Photo uploads through the editor's crop dialog stay under the API's 1 MB request limit (the browser compresses them
   first, as upstream relied on), the photos are served from `/api/image/<id>`, and the hosting's cache keeps them.
 - Publishing refreshes `/restaurant/<id>/menu` at once on Tofu's hosting (Next.js on-demand revalidation), and an edit
-  to a published menu reaches the page within about a minute.
+  to a published menu reaches the page within about a minute. If the runtime log shows `[menufic] ... was not
+  refreshed at once`, the hosting refused the refresh: publishing still works, and the page changes within the minute.
 - The link previews name the copy's address (`NEXT_PUBLIC_PROD_URL`).

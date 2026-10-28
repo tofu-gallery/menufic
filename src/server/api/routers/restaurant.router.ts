@@ -210,7 +210,19 @@ export const restaurantRouter = createTRPCRouter({
             where: { id_userId: { id: input.id, userId: ctx.session.user.id } },
         });
         /** Revalidate the published menu page */
-        await ctx.res?.revalidate(`/restaurant/${input.id}/menu`);
+        // Tofu: the change is saved by now, and the page redraws itself within 60 seconds anyway (menu.tsx), so a
+        // refresh the hosting refuses (on Vercel it is a request to the app's own address) is logged, not answered to
+        // the owner as a failed publish (see TOFU.md).
+        try {
+            await ctx.res?.revalidate(`/restaurant/${input.id}/menu`);
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error(
+                `[menufic] /restaurant/${input.id}/menu was not refreshed at once, it will be within 60 s: ${
+                    error instanceof Error ? error.message : String(error)
+                }`
+            );
+        }
         return restaurant;
     }),
 
