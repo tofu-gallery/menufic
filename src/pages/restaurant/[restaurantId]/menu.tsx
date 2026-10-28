@@ -31,6 +31,8 @@ const RestaurantMenuPage: NextPage = () => {
     return (
         <>
             <NextSeo
+                // Tofu: the link preview describes the restaurant alone; upstream ended it with "This menu was generated
+                // using Menufic.com", upstream's own hosted service, which a copy has nothing to do with (see TOFU.md).
                 description={`${t("seoDescription.restaurantName", { name: restaurant?.name })}. ${t(
                     "seoDescription.restaurantLocation",
                     { location: restaurant?.location }
@@ -38,7 +40,7 @@ const RestaurantMenuPage: NextPage = () => {
                     restaurant?.contactNo
                         ? t("seoDescription.restaurantContactNo", { contactNo: restaurant?.contactNo })
                         : ""
-                } ${t("seoDescription.menufic")}`}
+                }`}
                 openGraph={{
                     // Tofu: the photo is served by the app itself, at this copy's own address (see TOFU.md).
                     images: restaurant?.image?.path

@@ -54,7 +54,10 @@ Each commit on `tofu` says why in its message; in short:
 
 - **Sentry and Vercel Analytics are removed** (`sentry.*.config.js`, `next.config.mjs`, `src/pages/_error.tsx`,
   `src/pages/_app.tsx`, `package.json`): upstream reported errors to its own Sentry project and page views to Vercel
-  Analytics. The pages' link previews name the copy's address (`NEXT_PUBLIC_PROD_URL`), not menufic.com.
+  Analytics. The pages' link previews name the copy's address (`NEXT_PUBLIC_PROD_URL`), not menufic.com, and a
+  published menu's description is the restaurant's alone, its name, location and phone number
+  (`src/pages/restaurant/[restaurantId]/menu.tsx`, `src/lang/en.json`): upstream ended it with "This menu was generated
+  using Menufic.com", upstream's own hosted service, in every link preview and search snippet of the menu's address.
 - **The owner's password replaces Google, GitHub and the test login key**
   (`src/server/tofu-owner.ts`, new; `src/pages/api/auth/[...nextauth].ts`, `src/components/LoginOptions/LoginOptions.tsx`,
   `src/pages/auth/signin.tsx`, `src/lang/en.json`; `src/pages/auth/signin-test-user.tsx` removed). Upstream let anyone
@@ -96,7 +99,9 @@ Each commit on `tofu` says why in its message; in short:
 - **The home page is the copy's, not menufic.com's** (`src/pages/index.tsx`, `src/components/Footer/Footer.tsx`;
   `src/pages/privacy-policy.tsx` and `src/pages/terms-and-conditions.tsx` removed): menufic.com's pricing, its contact
   form (which posted to menufic.com's form service, and claimed success without sending anything when its key was
-  unset) and its privacy policy and terms, which describe menufic.com's own service, are gone. The sample menu shows
+  unset) and its privacy policy and terms, which describe menufic.com's own service, are gone. The home page's button
+  reads "Owner sign-in" (`src/lang/en.json`; upstream: "Get started for free", menufic.com's invitation to sign up),
+  since it opens the owner's password page and a guest who lands there has nothing to start. The sample menu shows
   only when `NEXT_PUBLIC_SAMPLE_MENU_ID` names one of the copy's own restaurants. The "About" section still credits
   and links upstream.
 - `.env.example` lists the settings above instead of upstream's.

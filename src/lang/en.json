@@ -55,7 +55,7 @@
             "tagLine1": "The best way to create",
             "tagLine2": "Digital Menus",
             "tagLine3": "for your restaurant",
-            "getStarted": "Get started for free"
+            "getStarted": "Owner sign-in"
         },
         "steps": {
             "title": "How it works?",
@@ -175,8 +175,7 @@
         "seoDescription": {
             "restaurantName": "Menu of restaurant {name}",
             "restaurantLocation": "Location: {location}.",
-            "restaurantContactNo": " Contact Number: {contactNo}.",
-            "menufic": "This menu was generated using Menufic.com"
+            "restaurantContactNo": " Contact Number: {contactNo}."
         }
     },
     "preview": {
