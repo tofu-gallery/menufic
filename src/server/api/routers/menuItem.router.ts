@@ -5,7 +5,8 @@ import type { Image, MenuItem, Prisma } from "@prisma/client";
 
 import { env } from "src/env/server.mjs";
 import { createTRPCRouter, protectedProcedure } from "src/server/api/trpc";
-import { encodeImageToBlurhash, getColor, imageKit, rgba2hex, uploadImage } from "src/server/imageUtil";
+// Tofu: photos are stored in the database instead of ImageKit (src/server/imageUtil.ts, TOFU.md).
+import { deleteImage, encodeImageToBlurhash, getColor, rgba2hex, uploadImage } from "src/server/imageUtil";
 import { categoryId, id, menuId, menuItemInput } from "src/utils/validators";
 
 export const menuItemRouter = createTRPCRouter({
@@ -69,7 +70,7 @@ export const menuItemRouter = createTRPCRouter({
         const promiseList = [];
 
         if (currentItem.imageId) {
-            promiseList.push(imageKit.deleteFile(currentItem.imageId));
+            promiseList.push(deleteImage(currentItem.imageId));
             transactions.push(ctx.prisma.image.delete({ where: { id: currentItem.imageId } }));
         }
         promiseList.push(ctx.prisma.$transaction(transactions));
@@ -90,7 +91,7 @@ export const menuItemRouter = createTRPCRouter({
 
         /** Delete the previous image from imageKit and db, if the image is being replaced */
         if (currentItem.imageId && (!input.imagePath || input.imageBase64)) {
-            promiseList.push(imageKit.deleteFile(currentItem.imageId));
+            promiseList.push(deleteImage(currentItem.imageId));
             transactions.push(ctx.prisma.image.delete({ where: { id: currentItem.imageId } }));
         }
 

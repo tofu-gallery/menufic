@@ -40,7 +40,10 @@ const RestaurantMenuPage: NextPage = () => {
                         : ""
                 } ${t("seoDescription.menufic")}`}
                 openGraph={{
-                    images: [{ url: `${env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT}/${restaurant?.image?.path}` }],
+                    // Tofu: the photo is served by the app itself, at this copy's own address (see TOFU.md).
+                    images: restaurant?.image?.path
+                        ? [{ url: `${env.NEXT_PUBLIC_PROD_URL}${restaurant.image.path}` }]
+                        : undefined,
                     type: "restaurant.menu",
                 }}
                 themeColor={restaurant?.image?.color}
@@ -68,15 +71,18 @@ export async function getStaticProps(context: GetStaticPropsContext<{ restaurant
     });
     const restaurantId = context.params?.restaurantId as string;
     const messages = (await import("src/lang/en.json")).default;
+    // Tofu: a published menu is read again at most a minute after it was last drawn (it was 30 minutes), so a change the
+    // owner makes reaches the guests' phones within about a minute; a restaurant that is not published reads as not
+    // found here, so its page is the same "no details" page as an unknown one (see TOFU.md).
     try {
         const restaurant = await ssg.restaurant.getDetails.fetch({ id: restaurantId });
         if (restaurant.isPublished) {
             // Only return restaurants that are published
-            return { props: { messages, restaurantId, trpcState: ssg.dehydrate() }, revalidate: 1800 }; // revalidate in 30 mins
+            return { props: { messages, restaurantId, trpcState: ssg.dehydrate() }, revalidate: 60 };
         }
         return { props: { messages, restaurantId }, revalidate: 60 };
     } catch {
-        return { props: { messages, restaurantId }, revalidate: 1800 };
+        return { props: { messages, restaurantId }, revalidate: 60 };
     }
 }
 

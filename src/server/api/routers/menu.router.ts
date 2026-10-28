@@ -5,7 +5,8 @@ import type { PrismaPromise } from "@prisma/client";
 
 import { env } from "src/env/server.mjs";
 import { createTRPCRouter, protectedProcedure } from "src/server/api/trpc";
-import { imageKit } from "src/server/imageUtil";
+// Tofu: photos are stored in the database instead of ImageKit (src/server/imageUtil.ts, TOFU.md).
+import { deleteImages } from "src/server/imageUtil";
 import { id, menuInput, restaurantId } from "src/utils/validators";
 
 export const menuRouter = createTRPCRouter({
@@ -65,7 +66,7 @@ export const menuRouter = createTRPCRouter({
         );
 
         if (imagePaths.length > 0) {
-            promiseList.push(imageKit.bulkDeleteFiles(imagePaths));
+            promiseList.push(deleteImages(imagePaths));
             transactions.push(ctx.prisma.image.deleteMany({ where: { id: { in: imagePaths } } }));
         }
 

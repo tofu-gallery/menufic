@@ -93,3 +93,12 @@ model Image {
 
     @@index([restaurantId])
 }
+
+// Tofu: the bytes of each photo, kept in the database instead of ImageKit (see TOFU.md). `id` is the `Image` row's
+// id; the bytes are in a table of their own so that reading a menu never loads them. /api/image/<id> serves them.
+model ImageFile {
+    id        String   @id
+    data      Bytes
+    mimeType  String
+    createdAt DateTime @default(now())
+}

@@ -1,19 +1,19 @@
 /* eslint-disable no-bitwise */
+// Tofu: photos are kept in the app's own database (the ImageFile table) and served at /api/image/<id>, instead of
+// being uploaded to ImageKit, which needed the owner's own ImageKit keys (see TOFU.md). `uploadImage` keeps the shape
+// of ImageKit's answer that the routers read (`fileId`, `filePath`), and `deleteImage`/`deleteImages` take the place of
+// ImageKit's `deleteFile`/`bulkDeleteFiles`.
 import { encode } from "blurhash";
 import { FastAverageColor } from "fast-average-color";
-import ImageKit from "imagekit";
 import { nanoid } from "nanoid";
 import sharp from "sharp";
 
-import { env } from "src/env/server.mjs";
-
-export const imageKit = new ImageKit({
-    privateKey: env.IMAGEKIT_PRIVATE_KEY,
-    publicKey: env.IMAGEKIT_PUBLIC_KEY,
-    urlEndpoint: env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT,
-});
+import { prisma } from "src/server/db";
 
 const fac = new FastAverageColor();
+
+/** The longest side a stored photo keeps; the app shows none larger. */
+const MAX_IMAGE_SIDE = 1600;
 
 /** Get the uri of a base64 image */
 export const getImageUriFromBase64 = (imageBase64: string) => {
@@ -25,21 +25,41 @@ export const getImageUriFromBase64 = (imageBase64: string) => {
     return uri;
 };
 
-/** Upload image to imageKit after converting it to an avif file */
-export const uploadImage = async (imageBase64: string, imageFolder: string) => {
+/** The address the app serves a stored photo at. */
+export const imagePathOf = (id: string) => `/api/image/${id}`;
+
+/**
+ * Store an image in the database after converting it to a WebP file. The image is decoded and encoded again, so what
+ * is stored is always a plain WebP picture whatever was sent. The folder ImageKit used is not needed any more.
+ */
+export const uploadImage = async (imageBase64: string, _imageFolder?: string) => {
     const uri = getImageUriFromBase64(imageBase64);
 
-    const avifImageBuffer = await sharp(Buffer.from(uri, "base64"))
-        .toFormat("avif", { quality: 100 })
-        .avif()
+    const webpImageBuffer = await sharp(Buffer.from(uri, "base64"))
+        .rotate()
+        .resize({ fit: "inside", height: MAX_IMAGE_SIDE, width: MAX_IMAGE_SIDE, withoutEnlargement: true })
+        .webp({ quality: 82 })
         .toBuffer();
 
-    return imageKit.upload({
-        file: avifImageBuffer,
-        fileName: nanoid(24),
-        folder: `/${env.IMAGEKIT_BASE_FOLDER}/${imageFolder}/`,
-    });
+    const fileId = nanoid(24);
+    await prisma.imageFile.create({ data: { data: webpImageBuffer, id: fileId, mimeType: "image/webp" } });
+
+    return { fileId, filePath: imagePathOf(fileId) };
 };
+
+/**
+ * Delete the stored bytes of the images with these ids. It starts at once, as ImageKit's call did, even where a router
+ * does not wait for it (a Prisma query on its own would only run once awaited).
+ */
+export const deleteImages = async (ids: string[]) => {
+    if (ids.length === 0) {
+        return { count: 0 };
+    }
+    return prisma.imageFile.deleteMany({ where: { id: { in: ids } } });
+};
+
+/** Delete the stored bytes of one image. */
+export const deleteImage = (id: string) => deleteImages([id]);
 
 /** Generate a blur hash value to the uploading image */
 export const encodeImageToBlurhash = async (imageBase64: string) => {

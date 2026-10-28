@@ -4,7 +4,10 @@ import { Box, clsx, createStyles } from "@mantine/core";
 import Image from "next/image";
 import { Blurhash } from "react-blurhash";
 
-import { env } from "../../env/client.mjs";
+// Tofu: photos are served by the app itself from its database (/api/image/<id>, src/server/imageUtil.ts) instead of
+// ImageKit, so a stored path is used as it is (see TOFU.md).
+const imageSrc = (imagePath: string) =>
+    /^(\/|blob:|data:|https?:)/.test(imagePath) ? imagePath : `/api/image/${imagePath}`;
 
 const useStyles = createStyles(() => ({
     imagePlaceholder: {
@@ -65,7 +68,7 @@ export const ImageKitImage: FC<Props> = ({ blurhash, color, imagePath, imageAlt,
                     className={classes.itemImage}
                     height={height}
                     loading="lazy"
-                    src={`${env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT}/${imagePath}?tr=f-avif,w-${width}`}
+                    src={imageSrc(imagePath)}
                     width={width}
                 />
             )}

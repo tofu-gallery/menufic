@@ -5,7 +5,16 @@ import type { Image, Prisma, PrismaPromise, Restaurant } from "@prisma/client";
 
 import { env } from "src/env/server.mjs";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "src/server/api/trpc";
-import { encodeImageToBlurhash, getColor, imageKit, rgba2hex, uploadImage } from "src/server/imageUtil";
+// Tofu: photos are stored in the database instead of ImageKit (src/server/imageUtil.ts, TOFU.md), and a restaurant's
+// details are read by anyone only once it is published.
+import {
+    deleteImage,
+    deleteImages,
+    encodeImageToBlurhash,
+    getColor,
+    rgba2hex,
+    uploadImage,
+} from "src/server/imageUtil";
 import { bannerInput, id, restaurantId, restaurantInput } from "src/utils/validators";
 
 export const restaurantRouter = createTRPCRouter({
@@ -118,7 +127,7 @@ export const restaurantRouter = createTRPCRouter({
             ctx.prisma.restaurant.delete({ where: { id_userId: { id: input.id, userId: ctx.session.user.id } } })
         );
 
-        await Promise.all([imageKit.bulkDeleteFiles(imagePaths), ctx.prisma.$transaction(transactions)]);
+        await Promise.all([deleteImages(imagePaths), ctx.prisma.$transaction(transactions)]);
 
         return currentItem;
     }),
@@ -131,7 +140,7 @@ export const restaurantRouter = createTRPCRouter({
         });
         if (restaurant.banners.find((item) => item.id === input.id)) {
             const [, deletedImage] = await Promise.all([
-                imageKit.deleteFile(input.id),
+                deleteImage(input.id),
                 ctx.prisma.image.delete({ where: { id: input.id } }),
             ]);
             return deletedImage;
@@ -166,8 +175,8 @@ export const restaurantRouter = createTRPCRouter({
     }),
 
     /** Get all the details including items and images, for a given restaurant ID */
-    getDetails: publicProcedure.input(id).query(({ ctx, input }) =>
-        ctx.prisma.restaurant.findFirstOrThrow({
+    getDetails: publicProcedure.input(id).query(async ({ ctx, input }) => {
+        const restaurant = await ctx.prisma.restaurant.findFirst({
             include: {
                 banners: true,
                 image: true,
@@ -181,9 +190,18 @@ export const restaurantRouter = createTRPCRouter({
                     orderBy: { position: "asc" },
                 },
             },
-            where: { id: input.id },
-        })
-    ),
+            // Tofu: anyone may read a published restaurant, and only its owner an unpublished one.
+            where: {
+                OR: [{ isPublished: true }, ...(ctx.session?.user ? [{ userId: ctx.session.user.id }] : [])],
+                id: input.id,
+            },
+        });
+        // Tofu: an unknown or unpublished restaurant answers 404, not a server error.
+        if (!restaurant) {
+            throw new TRPCError({ code: "NOT_FOUND" });
+        }
+        return restaurant;
+    }),
 
     /** Update the published status of the restaurant */
     setPublished: protectedProcedure.input(id.extend({ isPublished: z.boolean() })).mutation(async ({ ctx, input }) => {
@@ -215,7 +233,7 @@ export const restaurantRouter = createTRPCRouter({
                 uploadImage(input.imageBase64, `user/${ctx.session.user.id}/restaurant`),
                 encodeImageToBlurhash(input.imageBase64),
                 getColor(input.imageBase64),
-                imageKit.deleteFile(currentItem.imageId),
+                deleteImage(currentItem.imageId),
             ]);
 
             transactions.push(
